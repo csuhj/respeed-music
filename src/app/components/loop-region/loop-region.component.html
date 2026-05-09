@@ -1,0 +1,54 @@
+<div class="loop-region">
+  <div class="header">
+    <span class="section-label">Loop</span>
+    <button
+      class="toggle-btn"
+      [class.active]="audio.loopEnabled()"
+      (click)="toggleLoop()"
+    >
+      {{ audio.loopEnabled() ? 'On' : 'Off' }}
+    </button>
+  </div>
+
+  <div class="track-wrap" #track>
+    <div class="track-bg"></div>
+
+    <div
+      class="loop-fill"
+      [class.enabled]="audio.loopEnabled()"
+      [style.left]="fillLeft"
+      [style.width]="fillWidth"
+    ></div>
+
+    <!-- Start handle -->
+    <div
+      class="handle"
+      [class.enabled]="audio.loopEnabled()"
+      [style.left]="fillLeft"
+      title="Loop start"
+      (pointerdown)="onHandlePointerDown($event, 'start')"
+      (pointermove)="onHandlePointerMove($event)"
+      (pointerup)="onHandlePointerUp($event)"
+    >
+      <div class="handle-label">A</div>
+    </div>
+
+    <!-- End handle -->
+    <div
+      class="handle"
+      [class.enabled]="audio.loopEnabled()"
+      [style.left]="endPct + '%'"
+      title="Loop end"
+      (pointerdown)="onHandlePointerDown($event, 'end')"
+      (pointermove)="onHandlePointerMove($event)"
+      (pointerup)="onHandlePointerUp($event)"
+    >
+      <div class="handle-label">B</div>
+    </div>
+  </div>
+
+  <div class="time-labels">
+    <span>A: {{ formatDuration(audio.loopStart()) }}</span>
+    <span>B: {{ formatDuration(audio.loopEnd()) }}</span>
+  </div>
+</div>

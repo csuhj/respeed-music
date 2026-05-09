@@ -1,0 +1,45 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --bg-color:       #121212;
+  --surface-color:  #1e1e1e;
+  --surface-hover:  #252525;
+  --border-color:   #333;
+  --accent-color:   #7c6af7;
+  --accent-hover:   #9585ff;
+  --text-primary:   #eeeeee;
+  --text-secondary: #888888;
+  --error-color:    #e05c5c;
+  --track-bg:       #444444;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.app-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+button {
+  font-family: inherit;
+}

@@ -1,0 +1,31 @@
+<div class="speed-control">
+  <label class="label">Speed</label>
+
+  <div class="slider-row">
+    <span class="limit">25%</span>
+    <input
+      class="slider"
+      type="range"
+      min="25"
+      max="200"
+      step="5"
+      [value]="speedPercent"
+      (input)="onSliderInput($event)"
+    />
+    <span class="limit">200%</span>
+  </div>
+
+  <div class="readout">{{ speedPercent }}%</div>
+
+  <div class="presets">
+    @for (p of presets; track p) {
+      <button
+        class="preset-btn"
+        [class.active]="audio.speed() === p"
+        (click)="setPreset(p)"
+      >
+        {{ presetLabel(p) }}
+      </button>
+    }
+  </div>
+</div>

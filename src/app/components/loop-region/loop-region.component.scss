@@ -1,0 +1,120 @@
+.loop-region {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary, #aaa);
+}
+
+.toggle-btn {
+  padding: 3px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color, #555);
+  background: transparent;
+  color: var(--text-secondary, #aaa);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  min-width: 52px;
+
+  &:hover {
+    border-color: var(--accent-color, #7c6af7);
+    color: var(--text-primary, #eee);
+  }
+
+  &.active {
+    background: var(--accent-color, #7c6af7);
+    border-color: var(--accent-color, #7c6af7);
+    color: #fff;
+  }
+}
+
+.track-wrap {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.track-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--track-bg, #444);
+}
+
+.loop-fill {
+  position: absolute;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-color, #555);
+  transition: background-color 0.2s;
+  pointer-events: none;
+
+  &.enabled {
+    background: var(--accent-color, #7c6af7);
+    opacity: 0.5;
+  }
+}
+
+.handle {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+
+  &:active { cursor: grabbing; }
+
+  // The vertical bar
+  &::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--border-color, #555);
+    transition: background-color 0.2s;
+  }
+
+  &.enabled::before {
+    background: var(--accent-color, #7c6af7);
+  }
+}
+
+.handle-label {
+  position: absolute;
+  bottom: -16px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary, #888);
+  pointer-events: none;
+}
+
+.time-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #888);
+  font-variant-numeric: tabular-nums;
+  padding-top: 8px;
+}

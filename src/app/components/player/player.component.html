@@ -1,0 +1,26 @@
+<div class="player">
+  <p class="track-name">{{ audio.fileName() }}</p>
+
+  <app-waveform />
+
+  <app-seek-bar />
+
+  <div class="transport">
+    <button class="btn stop-btn" (click)="stop()" title="Stop" [disabled]="!audio.isLoaded()">
+      &#9632;
+    </button>
+    <button class="btn play-btn" (click)="togglePlay()" [disabled]="!audio.isLoaded()">
+      @if (audio.isPlaying()) {
+        &#9646;&#9646;
+      } @else {
+        &#9654;
+      }
+    </button>
+  </div>
+
+  <app-speed-control />
+
+  <div class="divider"></div>
+
+  <app-loop-region />
+</div>

@@ -1,0 +1,91 @@
+.upload-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 180px;
+  border: 2px dashed var(--border-color, #555);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  background-color: var(--surface-color, #1e1e1e);
+  user-select: none;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--accent-color, #7c6af7);
+    background-color: var(--surface-hover, #252525);
+  }
+
+  &.drag-over {
+    border-color: var(--accent-color, #7c6af7);
+    background-color: var(--surface-hover, #252525);
+    border-style: solid;
+  }
+
+  &.loaded {
+    border-style: solid;
+    border-color: var(--accent-color, #7c6af7);
+    min-height: 120px;
+  }
+}
+
+.hidden-input {
+  display: none;
+}
+
+.prompt,
+.loaded-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary, #aaa);
+}
+
+.icon {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.primary-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary, #eee);
+  margin: 0;
+}
+
+.secondary-text,
+.formats,
+.change-hint {
+  font-size: 0.8rem;
+  margin: 0;
+  color: var(--text-secondary, #888);
+}
+
+.file-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #eee);
+  margin: 0;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-duration {
+  font-size: 0.85rem;
+  color: var(--accent-color, #7c6af7);
+  margin: 0;
+}
+
+.error-message {
+  margin-top: 8px;
+  color: var(--error-color, #e05c5c);
+  font-size: 0.85rem;
+  text-align: center;
+}

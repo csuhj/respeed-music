@@ -1,0 +1,23 @@
+<div
+  class="waveform-wrap"
+  #wrap
+  [class.clickable]="audio.isLoaded()"
+  (click)="onWrapClick($event)"
+>
+  <canvas #canvas class="waveform-canvas"></canvas>
+
+  @if (audio.duration() > 0) {
+    <div
+      class="loop-overlay"
+      [class.active]="audio.loopEnabled()"
+      [style.left.%]="loopStartPct"
+      [style.width.%]="loopWidthPct"
+    ></div>
+
+    <div class="playhead" [style.left.%]="positionPct"></div>
+  }
+
+  @if (!audio.isLoaded()) {
+    <div class="empty-state">Load a file to see waveform</div>
+  }
+</div>

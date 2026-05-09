@@ -1,0 +1,16 @@
+<div class="seek-bar">
+  <span class="time current">{{ formatDuration(audio.position()) }}</span>
+  <input
+    class="slider"
+    type="range"
+    min="0"
+    [max]="audio.duration()"
+    step="0.1"
+    [value]="displayValue"
+    [style]="{'--pct': progressPct}"
+    (input)="onInput($event)"
+    (change)="onCommit($event)"
+    [disabled]="!audio.isLoaded()"
+  />
+  <span class="time total">{{ formatDuration(audio.duration()) }}</span>
+</div>

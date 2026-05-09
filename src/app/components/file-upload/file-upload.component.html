@@ -1,0 +1,42 @@
+<div
+  class="upload-zone"
+  [class.drag-over]="isDragOver"
+  [class.loaded]="audio.isLoaded()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+  (click)="fileInput.click()"
+  role="button"
+  tabindex="0"
+  (keydown.enter)="fileInput.click()"
+  (keydown.space)="fileInput.click()"
+  aria-label="Upload audio file"
+>
+  <input
+    #fileInput
+    type="file"
+    accept="audio/*"
+    class="hidden-input"
+    (change)="onFileSelected($event)"
+  />
+
+  @if (!audio.isLoaded()) {
+    <div class="prompt">
+      <span class="icon">♪</span>
+      <p class="primary-text">Drop an audio file here</p>
+      <p class="secondary-text">or click to browse</p>
+      <p class="formats">MP3 · WAV · FLAC · OGG · AAC · WebM</p>
+    </div>
+  } @else {
+    <div class="loaded-info">
+      <span class="icon">♪</span>
+      <p class="file-name">{{ audio.fileName() }}</p>
+      <p class="file-duration">{{ formatDuration(audio.duration()) }}</p>
+      <p class="change-hint">Click or drop to load a different file</p>
+    </div>
+  }
+</div>
+
+@if (audio.error()) {
+  <p class="error-message">{{ audio.error() }}</p>
+}
