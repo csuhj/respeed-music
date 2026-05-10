@@ -18,7 +18,7 @@ export class PlayerComponent {
     if (this.audio.isPlaying()) {
       this.audio.pause();
     } else {
-      this.audio.play();
+      this.audio.play().catch(err => console.error('Audio playback failed:', err));
     }
   }
 

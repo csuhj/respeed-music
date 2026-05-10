@@ -32,9 +32,19 @@ export class AudioService {
     this.stop();
     this.error.set(null);
     try {
-      const ctx = this.getCtx();
       const arrayBuffer = await file.arrayBuffer();
-      this.buffer = await ctx.decodeAudioData(arrayBuffer);
+      // Decode using a throwaway context so the playback AudioContext is
+      // always created inside the play() user-gesture on iOS Safari.
+      const decodeCtx = new AudioContext();
+      this.buffer = await decodeCtx.decodeAudioData(arrayBuffer);
+      decodeCtx.close();
+      // Discard any existing playback context — play() will create a fresh
+      // one from within the button-tap gesture, which iOS requires.
+      if (this.ctx) {
+        this.ctx.close();
+        this.ctx = null;
+        this.workletRegistered = false;
+      }
       this.audioBuffer.set(this.buffer);
       this.duration.set(this.buffer.duration);
       this.seekOffset = 0;
