@@ -1,0 +1,23 @@
+@if (visible()) {
+  <div class="hint-backdrop" (click)="dismiss()">
+    <div class="hint-sheet" (click)="$event.stopPropagation()">
+      <button class="hint-close" (click)="dismiss()" aria-label="Dismiss">&#x2715;</button>
+      <p class="hint-text">
+        Install <strong>Respeed</strong> on your Home Screen for quick access.
+      </p>
+      <p class="hint-instruction">
+        Tap&nbsp;
+        <span class="hint-share-icon" aria-label="Share button">
+          <!-- iOS share icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 12H3v9h18v-9h-5"/>
+            <polyline points="12 3 12 15"/>
+            <polyline points="9 6 12 3 15 6"/>
+          </svg>
+        </span>
+        &nbsp;then <strong>"Add to Home Screen"</strong>
+      </p>
+    </div>
+  </div>
+}
