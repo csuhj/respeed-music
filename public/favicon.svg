@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="6" fill="#121212"/>
+
+  <!-- Speed/motion lines (left side, behind the note) -->
+  <line x1="2"  y1="11"   x2="13" y2="11"   stroke="#9585ff" stroke-width="2"   stroke-linecap="round"/>
+  <line x1="2"  y1="16.5" x2="11" y2="16.5" stroke="#9585ff" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="3"  y1="22"   x2="10" y2="22"   stroke="#9585ff" stroke-width="1"   stroke-linecap="round" opacity="0.45"/>
+
+  <!-- Eighth note leaning forward (6° clockwise = charging ahead) -->
+  <g transform="rotate(6, 22, 16)">
+    <!-- Note head: filled oval, naturally angled -->
+    <ellipse cx="21" cy="24" rx="3.8" ry="2.6" fill="#eeeeee" transform="rotate(-22, 21, 24)"/>
+    <!-- Stem -->
+    <line x1="24.5" y1="22.5" x2="24.5" y2="8" stroke="#eeeeee" stroke-width="2" stroke-linecap="round"/>
+    <!-- Flag (eighth-note tail) -->
+    <path d="M24.5 8 C29 10.5 29 15 24.5 18" stroke="#eeeeee" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
