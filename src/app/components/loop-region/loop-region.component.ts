@@ -1,5 +1,5 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
-import { AudioService } from '../../services/audio.service';
+import { Component, ElementRef, ViewChild, input, output } from '@angular/core';
+import { LoopRegionVm } from '../../models/view-models';
 import { formatDuration } from '../../utils/format-duration';
 
 type Handle = 'start' | 'end';
@@ -12,7 +12,11 @@ const MIN_LOOP_SPAN = 0.5; // seconds
   styleUrl: './loop-region.component.scss',
 })
 export class LoopRegionComponent {
-  protected readonly audio = inject(AudioService);
+  readonly vm = input.required<LoopRegionVm>();
+  readonly loopToggle = output<void>();
+  readonly loopStartChange = output<number>();
+  readonly loopEndChange = output<number>();
+
   protected readonly formatDuration = formatDuration;
 
   @ViewChild('track') trackRef!: ElementRef<HTMLDivElement>;
@@ -20,11 +24,11 @@ export class LoopRegionComponent {
   private dragging: Handle | null = null;
 
   get startPct(): number {
-    return this.toPct(this.audio.loopStart());
+    return this.toPct(this.vm().loopStart);
   }
 
   get endPct(): number {
-    return this.toPct(this.audio.loopEnd());
+    return this.toPct(this.vm().loopEnd);
   }
 
   get fillLeft(): string {
@@ -36,7 +40,7 @@ export class LoopRegionComponent {
   }
 
   toggleLoop(): void {
-    this.audio.loopEnabled.set(!this.audio.loopEnabled());
+    this.loopToggle.emit();
   }
 
   onHandlePointerDown(event: PointerEvent, handle: Handle): void {
@@ -50,9 +54,9 @@ export class LoopRegionComponent {
     const time = this.pointerToTime(event.clientX);
 
     if (this.dragging === 'start') {
-      this.audio.setLoopStart(Math.min(time, this.audio.loopEnd() - MIN_LOOP_SPAN));
+      this.loopStartChange.emit(Math.min(time, this.vm().loopEnd - MIN_LOOP_SPAN));
     } else {
-      this.audio.setLoopEnd(Math.max(time, this.audio.loopStart() + MIN_LOOP_SPAN));
+      this.loopEndChange.emit(Math.max(time, this.vm().loopStart + MIN_LOOP_SPAN));
     }
   }
 
@@ -64,11 +68,11 @@ export class LoopRegionComponent {
   private pointerToTime(clientX: number): number {
     const rect = this.trackRef.nativeElement.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    return ratio * this.audio.duration();
+    return ratio * this.vm().duration;
   }
 
   private toPct(time: number): number {
-    const dur = this.audio.duration();
+    const dur = this.vm().duration;
     return dur > 0 ? (time / dur) * 100 : 0;
   }
 }

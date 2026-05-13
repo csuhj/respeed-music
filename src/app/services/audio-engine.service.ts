@@ -1,20 +1,10 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { SoundTouchNode } from '@soundtouchjs/audio-worklet';
+import { AudioStateService } from './audio-state.service';
 
 @Injectable({ providedIn: 'root' })
-export class AudioService {
-  readonly fileName = signal('');
-  readonly duration = signal(0);
-  readonly position = signal(0);
-  readonly isLoaded = signal(false);
-  readonly isPlaying = signal(false);
-  readonly speed = signal(1.0);
-  readonly error = signal<string | null>(null);
-  readonly audioBuffer = signal<AudioBuffer | null>(null);
-
-  readonly loopEnabled = signal(false);
-  readonly loopStart = signal(0);
-  readonly loopEnd = signal(0);
+export class AudioEngineService {
+  private readonly state = inject(AudioStateService);
 
   private ctx: AudioContext | null = null;
   private buffer: AudioBuffer | null = null;
@@ -30,7 +20,7 @@ export class AudioService {
 
   async load(file: File): Promise<void> {
     this.stop();
-    this.error.set(null);
+    this.state.error.set(null);
     try {
       const arrayBuffer = await file.arrayBuffer();
       // Decode using a throwaway context so the playback AudioContext is
@@ -45,18 +35,18 @@ export class AudioService {
         this.ctx = null;
         this.workletRegistered = false;
       }
-      this.audioBuffer.set(this.buffer);
-      this.duration.set(this.buffer.duration);
+      this.state.audioBuffer.set(this.buffer);
+      this.state.duration.set(this.buffer.duration);
       this.seekOffset = 0;
-      this.position.set(0);
-      this.loopStart.set(0);
-      this.loopEnd.set(this.buffer.duration);
-      this.loopEnabled.set(false);
-      this.fileName.set(file.name);
-      this.isLoaded.set(true);
+      this.state.position.set(0);
+      this.state.loopStart.set(0);
+      this.state.loopEnd.set(this.buffer.duration);
+      this.state.loopEnabled.set(false);
+      this.state.fileName.set(file.name);
+      this.state.isLoaded.set(true);
     } catch {
-      this.error.set('Could not decode audio — try MP3, WAV, FLAC, or OGG.');
-      this.isLoaded.set(false);
+      this.state.error.set('Could not decode audio — try MP3, WAV, FLAC, or OGG.');
+      this.state.isLoaded.set(false);
     }
   }
 
@@ -76,7 +66,7 @@ export class AudioService {
     this.teardownGraph();
 
     this.stNode = new SoundTouchNode(ctx);
-    this.stNode.tempo.value = this.speed();
+    this.stNode.tempo.value = this.state.speed();
 
     this.gainNode = ctx.createGain();
     this.stNode.connect(this.gainNode);
@@ -86,90 +76,92 @@ export class AudioService {
     this.source.buffer = this.buffer;
     this.source.connect(this.stNode);
     this.source.onended = () => {
-      if (this.isPlaying() && !this.loopRestarting) {
-        this.isPlaying.set(false);
-        this.position.set(this.duration());
+      if (this.state.isPlaying() && !this.loopRestarting) {
+        this.state.isPlaying.set(false);
+        this.state.position.set(this.state.duration());
         this.stopTimer();
       }
     };
 
     this.startContextTime = ctx.currentTime;
     this.source.start(0, this.seekOffset);
-    this.isPlaying.set(true);
+    this.state.isPlaying.set(true);
     this.loopRestarting = false;
     this.startTimer();
   }
 
   pause(): void {
-    if (!this.isPlaying()) return;
+    if (!this.state.isPlaying()) return;
     this.seekOffset = this.currentPosition();
-    this.position.set(this.seekOffset);
+    this.state.position.set(this.seekOffset);
     this.teardownGraph();
-    this.isPlaying.set(false);
+    this.state.isPlaying.set(false);
     this.stopTimer();
   }
 
   stop(): void {
     this.teardownGraph();
     this.seekOffset = 0;
-    this.position.set(0);
-    this.isPlaying.set(false);
+    this.state.position.set(0);
+    this.state.isPlaying.set(false);
     this.stopTimer();
   }
 
   seek(seconds: number): void {
-    const clamped = Math.max(0, Math.min(seconds, this.duration()));
+    const clamped = Math.max(0, Math.min(seconds, this.state.duration()));
     this.seekOffset = clamped;
-    this.position.set(clamped);
-    if (this.isPlaying()) {
+    this.state.position.set(clamped);
+    if (this.state.isPlaying()) {
       this.teardownGraph();
       this.play();
     }
   }
 
   setSpeed(ratio: number): void {
-    if (this.isPlaying()) {
-      // Snapshot position so tracking stays accurate after speed change
+    if (this.state.isPlaying()) {
+      // Capture position before changing speed; currentPosition() uses the current ratio
       this.seekOffset = this.currentPosition();
-      this.startContextTime = this.getCtx().currentTime;
     }
-    this.speed.set(ratio);
-    if (this.stNode) {
-      this.stNode.tempo.value = ratio;
+    this.state.speed.set(ratio);
+    if (this.state.isPlaying()) {
+      // Restart playback to flush SoundTouch's internal buffer; simply updating
+      // tempo.value leaves already-buffered slow audio draining at the old speed
+      this.teardownGraph();
+      this.play();
     }
   }
 
   setLoopStart(seconds: number): void {
-    this.loopStart.set(Math.max(0, Math.min(seconds, this.loopEnd())));
+    this.state.loopStart.set(Math.max(0, Math.min(seconds, this.state.loopEnd())));
   }
 
   setLoopEnd(seconds: number): void {
-    this.loopEnd.set(Math.max(this.loopStart(), Math.min(seconds, this.duration())));
+    this.state.loopEnd.set(Math.max(this.state.loopStart(), Math.min(seconds, this.state.duration())));
   }
 
   private currentPosition(): number {
-    if (!this.ctx || !this.isPlaying()) return this.seekOffset;
+    if (!this.ctx || !this.state.isPlaying()) return this.seekOffset;
     const elapsed = this.ctx.currentTime - this.startContextTime;
-    return Math.min(this.seekOffset + elapsed * this.speed(), this.duration());
+    return Math.min(this.seekOffset + elapsed * this.state.speed(), this.state.duration());
   }
 
   private startTimer(): void {
     this.stopTimer();
     this.positionTimer = setInterval(() => {
       const pos = this.currentPosition();
-      this.position.set(pos);
+      this.state.position.set(pos);
 
-      if (this.loopEnabled() && pos >= this.loopEnd() && !this.loopRestarting) {
+      if (this.state.loopEnabled() && pos >= this.state.loopEnd() && !this.loopRestarting) {
         this.loopRestarting = true;
-        this.seekOffset = this.loopStart();
+        this.seekOffset = this.state.loopStart();
         this.teardownGraph();
         this.play();
         return;
       }
 
-      if (pos >= this.duration()) {
-        this.isPlaying.set(false);
-        this.position.set(this.duration());
+      if (pos >= this.state.duration()) {
+        this.state.isPlaying.set(false);
+        this.state.position.set(this.state.duration());
         this.stopTimer();
       }
     }, 250);

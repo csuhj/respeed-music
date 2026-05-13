@@ -21,7 +21,7 @@
     @for (p of presets; track p) {
       <button
         class="preset-btn"
-        [class.active]="audio.speed() === p"
+        [class.active]="vm().speed === p"
         (click)="setPreset(p)"
       >
         {{ presetLabel(p) }}

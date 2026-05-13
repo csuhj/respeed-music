@@ -1,16 +1,16 @@
 <div class="player">
-  <p class="track-name">{{ audio.fileName() }}</p>
+  <p class="track-name">{{ state.fileName() }}</p>
 
-  <app-waveform />
+  <app-waveform [vm]="waveformVm()" (seek)="onSeek($event)" />
 
-  <app-seek-bar />
+  <app-seek-bar [vm]="seekBarVm()" (seek)="onSeek($event)" />
 
   <div class="transport">
-    <button class="btn stop-btn" (click)="stop()" title="Stop" [disabled]="!audio.isLoaded()">
+    <button class="btn stop-btn" (click)="stop()" title="Stop" [disabled]="!state.isLoaded()">
       &#9632;
     </button>
-    <button class="btn play-btn" (click)="togglePlay()" [disabled]="!audio.isLoaded()">
-      @if (audio.isPlaying()) {
+    <button class="btn play-btn" (click)="togglePlay()" [disabled]="!state.isLoaded()">
+      @if (state.isPlaying()) {
         &#9646;&#9646;
       } @else {
         &#9654;
@@ -18,9 +18,14 @@
     </button>
   </div>
 
-  <app-speed-control />
+  <app-speed-control [vm]="speedVm()" (speedChange)="onSpeedChange($event)" />
 
   <div class="divider"></div>
 
-  <app-loop-region />
+  <app-loop-region
+    [vm]="loopVm()"
+    (loopToggle)="onLoopToggle()"
+    (loopStartChange)="onLoopStartChange($event)"
+    (loopEndChange)="onLoopEndChange($event)"
+  />
 </div>

@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { AudioService } from '../../services/audio.service';
+import { Component, input, output } from '@angular/core';
+import { SeekBarVm } from '../../models/view-models';
 import { formatDuration } from '../../utils/format-duration';
 
 @Component({
@@ -8,18 +8,20 @@ import { formatDuration } from '../../utils/format-duration';
   styleUrl: './seek-bar.component.scss',
 })
 export class SeekBarComponent {
-  protected readonly audio = inject(AudioService);
+  readonly vm = input.required<SeekBarVm>();
+  readonly seek = output<number>();
+
   protected readonly formatDuration = formatDuration;
 
   protected isDragging = false;
   protected dragValue = 0;
 
   get displayValue(): number {
-    return this.isDragging ? this.dragValue : this.audio.position();
+    return this.isDragging ? this.dragValue : this.vm().position;
   }
 
   get progressPct(): number {
-    const dur = this.audio.duration();
+    const dur = this.vm().duration;
     return dur > 0 ? (this.displayValue / dur) * 100 : 0;
   }
 
@@ -31,6 +33,6 @@ export class SeekBarComponent {
   onCommit(event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.isDragging = false;
-    this.audio.seek(value);
+    this.seek.emit(value);
   }
 }

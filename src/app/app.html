@@ -1,7 +1,7 @@
 <main class="app-shell">
   <h1 class="app-title">Respeed Music</h1>
-  <app-file-upload />
-  @if (audio.isLoaded()) {
+  <app-file-upload [vm]="fileUploadVm()" (fileSelected)="onFileSelected($event)" />
+  @if (state.isLoaded()) {
     <app-player />
   }
 </main>

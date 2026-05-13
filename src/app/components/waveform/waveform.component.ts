@@ -5,10 +5,13 @@ import {
   OnDestroy,
   ViewChild,
   afterNextRender,
+  computed,
   effect,
   inject,
+  input,
+  output,
 } from '@angular/core';
-import { AudioService } from '../../services/audio.service';
+import { WaveformVm } from '../../models/view-models';
 
 @Component({
   selector: 'app-waveform',
@@ -16,7 +19,9 @@ import { AudioService } from '../../services/audio.service';
   styleUrl: './waveform.component.scss',
 })
 export class WaveformComponent implements OnDestroy {
-  protected readonly audio = inject(AudioService);
+  readonly vm = input.required<WaveformVm>();
+  readonly seek = output<number>();
+
   private readonly injector = inject(Injector);
 
   @ViewChild('canvas') private canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -24,32 +29,35 @@ export class WaveformComponent implements OnDestroy {
 
   private resizeObserver!: ResizeObserver;
 
+  // Isolated computed so the redraw effect only fires when the buffer
+  // actually changes, not on every position/loop update from the vm.
+  protected readonly buffer = computed(() => this.vm().audioBuffer);
+
   get positionPct(): number {
-    const dur = this.audio.duration();
-    return dur > 0 ? (this.audio.position() / dur) * 100 : 0;
+    const dur = this.vm().duration;
+    return dur > 0 ? (this.vm().position / dur) * 100 : 0;
   }
 
   get loopStartPct(): number {
-    const dur = this.audio.duration();
-    return dur > 0 ? (this.audio.loopStart() / dur) * 100 : 0;
+    const dur = this.vm().duration;
+    return dur > 0 ? (this.vm().loopStart / dur) * 100 : 0;
   }
 
   get loopWidthPct(): number {
-    const dur = this.audio.duration();
-    return dur > 0 ? ((this.audio.loopEnd() - this.audio.loopStart()) / dur) * 100 : 100;
+    const dur = this.vm().duration;
+    return dur > 0 ? ((this.vm().loopEnd - this.vm().loopStart) / dur) * 100 : 100;
   }
 
   constructor() {
     afterNextRender(() => {
       this.resizeObserver = new ResizeObserver(() => {
-        const buf = this.audio.audioBuffer();
+        const buf = this.buffer();
         if (buf) this.draw(buf);
       });
       this.resizeObserver.observe(this.wrapRef.nativeElement);
 
-      // React to buffer changes now that the view is ready
       effect(() => {
-        const buf = this.audio.audioBuffer();
+        const buf = this.buffer();
         if (buf) this.draw(buf);
       }, { injector: this.injector });
     });
@@ -60,10 +68,10 @@ export class WaveformComponent implements OnDestroy {
   }
 
   onWrapClick(event: MouseEvent): void {
-    if (!this.audio.isLoaded()) return;
+    if (!this.buffer()) return;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    this.audio.seek(ratio * this.audio.duration());
+    this.seek.emit(ratio * this.vm().duration);
   }
 
   private draw(buffer: AudioBuffer): void {

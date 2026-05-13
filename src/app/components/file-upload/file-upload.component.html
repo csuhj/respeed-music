@@ -1,7 +1,7 @@
 <div
   class="upload-zone"
   [class.drag-over]="isDragOver"
-  [class.loaded]="audio.isLoaded()"
+  [class.loaded]="vm().isLoaded"
   (dragover)="onDragOver($event)"
   (dragleave)="onDragLeave()"
   (drop)="onDrop($event)"
@@ -20,7 +20,7 @@
     (change)="onFileSelected($event)"
   />
 
-  @if (!audio.isLoaded()) {
+  @if (!vm().isLoaded) {
     <div class="prompt">
       <span class="icon">♪</span>
       <p class="primary-text">Drop an audio file here</p>
@@ -30,13 +30,13 @@
   } @else {
     <div class="loaded-info">
       <span class="icon">♪</span>
-      <p class="file-name">{{ audio.fileName() }}</p>
-      <p class="file-duration">{{ formatDuration(audio.duration()) }}</p>
+      <p class="file-name">{{ vm().fileName }}</p>
+      <p class="file-duration">{{ formatDuration(vm().duration) }}</p>
       <p class="change-hint">Click or drop to load a different file</p>
     </div>
   }
 </div>
 
-@if (audio.error()) {
-  <p class="error-message">{{ audio.error() }}</p>
+@if (vm().error) {
+  <p class="error-message">{{ vm().error }}</p>
 }

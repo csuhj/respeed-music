@@ -3,10 +3,10 @@
     <span class="section-label">Loop</span>
     <button
       class="toggle-btn"
-      [class.active]="audio.loopEnabled()"
+      [class.active]="vm().loopEnabled"
       (click)="toggleLoop()"
     >
-      {{ audio.loopEnabled() ? 'On' : 'Off' }}
+      {{ vm().loopEnabled ? 'On' : 'Off' }}
     </button>
   </div>
 
@@ -15,7 +15,7 @@
 
     <div
       class="loop-fill"
-      [class.enabled]="audio.loopEnabled()"
+      [class.enabled]="vm().loopEnabled"
       [style.left]="fillLeft"
       [style.width]="fillWidth"
     ></div>
@@ -23,7 +23,7 @@
     <!-- Start handle -->
     <div
       class="handle"
-      [class.enabled]="audio.loopEnabled()"
+      [class.enabled]="vm().loopEnabled"
       [style.left]="fillLeft"
       title="Loop start"
       (pointerdown)="onHandlePointerDown($event, 'start')"
@@ -36,7 +36,7 @@
     <!-- End handle -->
     <div
       class="handle"
-      [class.enabled]="audio.loopEnabled()"
+      [class.enabled]="vm().loopEnabled"
       [style.left]="endPct + '%'"
       title="Loop end"
       (pointerdown)="onHandlePointerDown($event, 'end')"
@@ -48,7 +48,7 @@
   </div>
 
   <div class="time-labels">
-    <span>A: {{ formatDuration(audio.loopStart()) }}</span>
-    <span>B: {{ formatDuration(audio.loopEnd()) }}</span>
+    <span>A: {{ formatDuration(vm().loopStart) }}</span>
+    <span>B: {{ formatDuration(vm().loopEnd) }}</span>
   </div>
 </div>
