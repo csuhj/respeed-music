@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { render, fireEvent } from '@testing-library/angular';
 import { vi } from 'vitest';
 import { IosInstallHintComponent } from './ios-install-hint.component';
 
@@ -30,136 +30,114 @@ function setStandalone(value: boolean | undefined): void {
   Object.defineProperty(navigator, 'standalone', { value, configurable: true, writable: true });
 }
 
-function createFixture(): ComponentFixture<IosInstallHintComponent> {
-  const fixture = TestBed.createComponent(IosInstallHintComponent);
-  fixture.detectChanges(); // triggers ngOnInit
-  return fixture;
-}
-
 describe('IosInstallHintComponent', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     localStorage.clear();
     setStandalone(undefined); // not running as installed PWA
-
-    await TestBed.configureTestingModule({
-      imports: [IosInstallHintComponent],
-    }).compileComponents();
   });
 
   afterEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
-    TestBed.resetTestingModule();
   });
 
   describe('ngOnInit — visibility logic', () => {
-    it('shows the hint on iOS Safari when not standalone and not dismissed', () => {
+    it('shows the hint on iOS Safari when not standalone and not dismissed', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      expect(fixture.componentInstance.visible()).toBe(true);
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeTruthy();
     });
 
-    it('stays hidden on a desktop browser', () => {
+    it('stays hidden on a desktop browser', async () => {
       mockUserAgent(DESKTOP_UA);
-      const fixture = createFixture();
-      expect(fixture.componentInstance.visible()).toBe(false);
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('stays hidden on iOS Chrome (CriOS in UA)', () => {
+    it('stays hidden on iOS Chrome (CriOS in UA)', async () => {
       mockUserAgent(IOS_CHROME_UA);
-      const fixture = createFixture();
-      expect(fixture.componentInstance.visible()).toBe(false);
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('stays hidden on iOS Firefox (FxiOS in UA)', () => {
+    it('stays hidden on iOS Firefox (FxiOS in UA)', async () => {
       mockUserAgent(IOS_FIREFOX_UA);
-      const fixture = createFixture();
-      expect(fixture.componentInstance.visible()).toBe(false);
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('stays hidden when running as an installed standalone PWA', () => {
+    it('stays hidden when running as an installed standalone PWA', async () => {
       mockUserAgent(IOS_SAFARI_UA);
       setStandalone(true);
-      const fixture = createFixture();
-      expect(fixture.componentInstance.visible()).toBe(false);
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('stays hidden when the user has previously dismissed the hint', () => {
+    it('stays hidden when the user has previously dismissed the hint', async () => {
       mockUserAgent(IOS_SAFARI_UA);
       localStorage.setItem('pwa-hint-dismissed', 'true');
-      const fixture = createFixture();
-      expect(fixture.componentInstance.visible()).toBe(false);
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
   });
 
   describe('dismiss()', () => {
-    it('sets visible to false', () => {
+    it('hides the modal in the DOM', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      const component = fixture.componentInstance;
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeTruthy();
 
-      expect(component.visible()).toBe(true);
-      component.dismiss();
-      expect(component.visible()).toBe(false);
+      fireEvent.click(document.querySelector('.hint-close') as HTMLElement);
+
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('persists the dismissal to localStorage', () => {
+    it('persists the dismissal to localStorage', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
+      const { fixture } = await render(IosInstallHintComponent);
       fixture.componentInstance.dismiss();
       expect(localStorage.getItem('pwa-hint-dismissed')).toBe('true');
-    });
-
-    it('hides the modal in the DOM after dismissal', () => {
-      mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      expect(fixture.nativeElement.querySelector('.hint-backdrop')).toBeTruthy();
-
-      fixture.componentInstance.dismiss();
-      fixture.detectChanges();
-
-      expect(fixture.nativeElement.querySelector('.hint-backdrop')).toBeFalsy();
     });
   });
 
   describe('template', () => {
-    it('renders nothing when not visible', () => {
+    it('renders nothing when not visible', async () => {
       mockUserAgent(DESKTOP_UA);
-      const fixture = createFixture();
-      expect(fixture.nativeElement.querySelector('.hint-backdrop')).toBeFalsy();
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('renders the modal sheet when visible', () => {
+    it('renders the modal sheet when visible', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      expect(fixture.nativeElement.querySelector('.hint-sheet')).toBeTruthy();
+      await render(IosInstallHintComponent);
+      expect(document.querySelector('.hint-sheet')).toBeTruthy();
     });
 
-    it('clicking the backdrop dismisses the hint', () => {
+    it('clicking the backdrop dismisses the hint', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      const component = fixture.componentInstance;
+      await render(IosInstallHintComponent);
 
-      fixture.nativeElement.querySelector('.hint-backdrop').click();
-      expect(component.visible()).toBe(false);
+      fireEvent.click(document.querySelector('.hint-backdrop') as HTMLElement);
+
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('clicking the close button dismisses the hint', () => {
+    it('clicking the close button dismisses the hint', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      const component = fixture.componentInstance;
+      await render(IosInstallHintComponent);
 
-      fixture.nativeElement.querySelector('.hint-close').click();
-      expect(component.visible()).toBe(false);
+      fireEvent.click(document.querySelector('.hint-close') as HTMLElement);
+
+      expect(document.querySelector('.hint-backdrop')).toBeFalsy();
     });
 
-    it('clicking inside the sheet does not dismiss the hint', () => {
+    it('clicking inside the sheet does not dismiss the hint', async () => {
       mockUserAgent(IOS_SAFARI_UA);
-      const fixture = createFixture();
-      const component = fixture.componentInstance;
+      await render(IosInstallHintComponent);
 
-      fixture.nativeElement.querySelector('.hint-sheet').click();
-      expect(component.visible()).toBe(true);
+      fireEvent.click(document.querySelector('.hint-sheet') as HTMLElement);
+
+      expect(document.querySelector('.hint-backdrop')).toBeTruthy();
     });
   });
 });

@@ -1,97 +1,90 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { render, screen, fireEvent } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { SpeedControlComponent } from './speed-control.component';
 import { SpeedControlVm } from '../../models/view-models';
 
 const DEFAULT_VM: SpeedControlVm = { speed: 1.0, disabled: false };
 
+async function setup(vm: SpeedControlVm = DEFAULT_VM) {
+  return render(SpeedControlComponent, { inputs: { vm } });
+}
+
 describe('SpeedControlComponent', () => {
-  let fixture: ComponentFixture<SpeedControlComponent>;
-  let component: SpeedControlComponent;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [SpeedControlComponent],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(SpeedControlComponent);
-    component = fixture.componentInstance;
-    fixture.componentRef.setInput('vm', DEFAULT_VM);
-    fixture.detectChanges();
+  it('creates successfully', async () => {
+    const { fixture } = await setup();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('creates successfully', () => {
-    expect(component).toBeTruthy();
-  });
-
-  describe('speedPercent', () => {
-    it('converts ratio 1.0 to 100%', () => {
-      expect(component.speedPercent).toBe(100);
+  describe('speedPercent display', () => {
+    it('converts ratio 1.0 to 100%', async () => {
+      await setup();
+      expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBe(100);
     });
 
-    it('converts ratio 0.75 to 75%', () => {
-      fixture.componentRef.setInput('vm', { speed: 0.75, disabled: false });
-      expect(component.speedPercent).toBe(75);
+    it('converts ratio 0.75 to 75%', async () => {
+      await setup({ speed: 0.75, disabled: false });
+      expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBe(75);
     });
 
-    it('rounds fractional results', () => {
-      fixture.componentRef.setInput('vm', { speed: 0.333, disabled: false });
-      expect(component.speedPercent).toBe(33);
+    it('rounds fractional results', async () => {
+      await setup({ speed: 0.333, disabled: false });
+      expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBe(33);
     });
   });
 
   describe('onSliderInput', () => {
-    it('emits speed ratio converted from percentage', () => {
-      const emitted: number[] = [];
-      component.speedChange.subscribe(v => emitted.push(v));
+    it('emits speed ratio converted from percentage', async () => {
+      const speedChangeSpy = vi.fn();
+      await render(SpeedControlComponent, {
+        inputs: { vm: DEFAULT_VM },
+        on: { speedChange: speedChangeSpy },
+      });
 
-      const slider = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-      slider.value = '75';
-      slider.dispatchEvent(new Event('input'));
+      fireEvent.input(screen.getByRole('slider'), { target: { value: '75' } });
 
-      expect(emitted).toEqual([0.75]);
+      expect(speedChangeSpy).toHaveBeenCalledWith(0.75);
     });
 
-    it('emits 2.0 for 200%', () => {
-      const emitted: number[] = [];
-      component.speedChange.subscribe(v => emitted.push(v));
+    it('emits 2.0 for 200%', async () => {
+      const speedChangeSpy = vi.fn();
+      await render(SpeedControlComponent, {
+        inputs: { vm: DEFAULT_VM },
+        on: { speedChange: speedChangeSpy },
+      });
 
-      const slider = fixture.nativeElement.querySelector('input') as HTMLInputElement;
-      slider.value = '200';
-      slider.dispatchEvent(new Event('input'));
+      fireEvent.input(screen.getByRole('slider'), { target: { value: '200' } });
 
-      expect(emitted).toEqual([2.0]);
+      expect(speedChangeSpy).toHaveBeenCalledWith(2.0);
     });
   });
 
   describe('setPreset', () => {
-    it('emits the preset ratio directly', () => {
-      const emitted: number[] = [];
-      component.speedChange.subscribe(v => emitted.push(v));
+    it('emits the preset ratio when clicked', async () => {
+      const speedChangeSpy = vi.fn();
+      await render(SpeedControlComponent, {
+        inputs: { vm: DEFAULT_VM },
+        on: { speedChange: speedChangeSpy },
+      });
 
-      component.setPreset(0.5);
+      await userEvent.click(screen.getByRole('button', { name: '50%' }));
 
-      expect(emitted).toEqual([0.5]);
+      expect(speedChangeSpy).toHaveBeenCalledWith(0.5);
     });
   });
 
   describe('template', () => {
-    it('marks the active preset button', () => {
-      fixture.componentRef.setInput('vm', { speed: 0.75, disabled: false });
-      fixture.detectChanges();
+    it('marks the active preset button', async () => {
+      await setup({ speed: 0.75, disabled: false });
 
-      const buttons = fixture.nativeElement.querySelectorAll('.preset-btn') as NodeListOf<HTMLButtonElement>;
-      const active = Array.from(buttons).filter(b => b.classList.contains('active'));
-      expect(active.length).toBe(1);
-      expect(active[0].textContent?.trim()).toBe('75%');
+      expect(screen.getByRole('button', { name: '75%' }).classList.contains('active')).toBe(true);
     });
 
-    it('shows no active preset when speed does not match any', () => {
-      fixture.componentRef.setInput('vm', { speed: 0.6, disabled: false });
-      fixture.detectChanges();
+    it('shows no active preset when speed does not match any', async () => {
+      await setup({ speed: 0.6, disabled: false });
 
-      const buttons = fixture.nativeElement.querySelectorAll('.preset-btn') as NodeListOf<HTMLButtonElement>;
-      const active = Array.from(buttons).filter(b => b.classList.contains('active'));
-      expect(active.length).toBe(0);
+      const activeButtons = screen.queryAllByRole('button').filter(b => b.classList.contains('active'));
+      expect(activeButtons).toHaveLength(0);
     });
   });
 });

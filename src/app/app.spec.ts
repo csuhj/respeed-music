@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { render, screen } from '@testing-library/angular';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
 import { App } from './app';
@@ -38,54 +38,69 @@ describe('App', () => {
   let stateStub: ReturnType<typeof makeStateStub>;
   let engineStub: ReturnType<typeof makeEngineStub>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     stateStub = makeStateStub();
     engineStub = makeEngineStub();
 
-    await TestBed.configureTestingModule({
-      imports: [App],
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      scale: vi.fn(),
+      clearRect: vi.fn(),
+      fillRect: vi.fn(),
+      fillStyle: '',
+    } as unknown as CanvasRenderingContext2D);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  async function setup() {
+    return render(App, {
       providers: [
         { provide: AudioStateService,  useValue: stateStub },
         { provide: AudioEngineService, useValue: engineStub },
       ],
-    }).compileComponents();
-  });
+    });
+  }
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
+  it('should create the app', async () => {
+    const { fixture } = await setup();
     expect(fixture.componentInstance).toBeTruthy();
   });
 
   it('should render title', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const h1 = fixture.nativeElement.querySelector('h1') as HTMLElement;
-    expect(h1?.textContent).toContain('Respeed Music');
+    await setup();
+    expect(screen.getByText('Respeed Music')).toBeTruthy();
   });
 
   describe('fileUploadVm', () => {
-    it('reflects state.isLoaded', () => {
+    it('reflects state.isLoaded, fileName, and duration in the upload zone', async () => {
       stateStub.isLoaded.set(true);
       stateStub.fileName.set('my-song.flac');
       stateStub.duration.set(240);
-
-      const fixture = TestBed.createComponent(App);
-      const vm = fixture.componentInstance['fileUploadVm']();
-      expect(vm.isLoaded).toBe(true);
-      expect(vm.fileName).toBe('my-song.flac');
-      expect(vm.duration).toBe(240);
+      await setup();
+      expect(document.querySelector('.loaded-info')).toBeTruthy();
+      expect(document.querySelector('.file-name')?.textContent?.trim()).toBe('my-song.flac');
+      expect(document.querySelector('.file-duration')?.textContent?.trim()).toBe('4:00');
     });
 
-    it('propagates error from state', () => {
+    it('propagates error from state', async () => {
       stateStub.error.set('Unsupported format');
-      const fixture = TestBed.createComponent(App);
-      expect(fixture.componentInstance['fileUploadVm']().error).toBe('Unsupported format');
+      await setup();
+      expect(screen.getByText('Unsupported format')).toBeTruthy();
     });
   });
 
   describe('onFileSelected', () => {
-    it('delegates to engine.load()', () => {
-      const fixture = TestBed.createComponent(App);
+    it('delegates to engine.load()', async () => {
+      const { fixture } = await setup();
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' });
       fixture.componentInstance.onFileSelected(file);
       expect(engineStub.load).toHaveBeenCalledWith(file);
@@ -94,19 +109,14 @@ describe('App', () => {
 
   describe('player visibility', () => {
     it('hides the player when audio is not loaded', async () => {
-      stateStub.isLoaded.set(false);
-      const fixture = TestBed.createComponent(App);
-      await fixture.whenStable();
-      fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('app-player')).toBeFalsy();
+      await setup();
+      expect(document.querySelector('app-player')).toBeFalsy();
     });
 
     it('shows the player when audio is loaded', async () => {
       stateStub.isLoaded.set(true);
-      const fixture = TestBed.createComponent(App);
-      await fixture.whenStable();
-      fixture.detectChanges();
-      expect(fixture.nativeElement.querySelector('app-player')).toBeTruthy();
+      await setup();
+      expect(document.querySelector('app-player')).toBeTruthy();
     });
   });
 });

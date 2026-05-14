@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { render, screen } from '@testing-library/angular';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
 import { PlayerComponent } from './player.component';
@@ -18,7 +18,6 @@ function makeStateStub() {
     loopEnabled: signal(false),
     loopStart:   signal(0),
     loopEnd:     signal(120),
-    loopEnabled_update: (fn: (v: boolean) => boolean) => {},
   };
 }
 
@@ -36,115 +35,140 @@ function makeEngineStub() {
 }
 
 describe('PlayerComponent', () => {
-  let fixture: ComponentFixture<PlayerComponent>;
-  let component: PlayerComponent;
   let stateStub: ReturnType<typeof makeStateStub>;
   let engineStub: ReturnType<typeof makeEngineStub>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     stateStub = makeStateStub();
     engineStub = makeEngineStub();
 
-    await TestBed.configureTestingModule({
-      imports: [PlayerComponent],
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      scale: vi.fn(),
+      clearRect: vi.fn(),
+      fillRect: vi.fn(),
+      fillStyle: '',
+    } as unknown as CanvasRenderingContext2D);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  async function setup() {
+    return render(PlayerComponent, {
       providers: [
         { provide: AudioStateService,  useValue: stateStub },
         { provide: AudioEngineService, useValue: engineStub },
       ],
-    }).compileComponents();
+    });
+  }
 
-    fixture = TestBed.createComponent(PlayerComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('creates successfully', () => {
-    expect(component).toBeTruthy();
+  it('creates successfully', async () => {
+    const { fixture } = await setup();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
   describe('computed ViewModels', () => {
-    it('seekBarVm reflects state signals', () => {
+    it('seek bar shows current position and duration', async () => {
       stateStub.position.set(45);
       stateStub.duration.set(180);
-      const vm = component['seekBarVm']();
-      expect(vm.position).toBe(45);
-      expect(vm.duration).toBe(180);
-      expect(vm.disabled).toBe(false);
+      await setup();
+      expect(screen.getByText('0:45')).toBeTruthy();
+      expect(screen.getByText('3:00')).toBeTruthy();
+      const seekSlider = document.querySelector('app-seek-bar .slider') as HTMLInputElement;
+      expect(seekSlider.disabled).toBe(false);
     });
 
-    it('seekBarVm.disabled is true when not loaded', () => {
+    it('seek bar slider is disabled when not loaded', async () => {
       stateStub.isLoaded.set(false);
-      expect(component['seekBarVm']().disabled).toBe(true);
+      await setup();
+      const seekSlider = document.querySelector('app-seek-bar .slider') as HTMLInputElement;
+      expect(seekSlider.disabled).toBe(true);
     });
 
-    it('speedVm reflects current speed', () => {
+    it('speed readout reflects current speed', async () => {
       stateStub.speed.set(0.5);
-      expect(component['speedVm']().speed).toBe(0.5);
+      await setup();
+      expect(document.querySelector('.readout')?.textContent?.trim()).toBe('50%');
     });
 
-    it('loopVm reflects all loop state signals', () => {
+    it('loop section reflects all loop state signals', async () => {
       stateStub.loopEnabled.set(true);
       stateStub.loopStart.set(10);
       stateStub.loopEnd.set(80);
-      const vm = component['loopVm']();
-      expect(vm.loopEnabled).toBe(true);
-      expect(vm.loopStart).toBe(10);
-      expect(vm.loopEnd).toBe(80);
+      await setup();
+      expect(screen.getByText('On')).toBeTruthy();
+      expect(screen.getByText('A: 0:10')).toBeTruthy();
+      expect(screen.getByText('B: 1:20')).toBeTruthy();
     });
 
-    it('waveformVm includes audioBuffer and position', () => {
+    it('waveform shows empty state when audio buffer is null', async () => {
       stateStub.position.set(30);
-      const vm = component['waveformVm']();
-      expect(vm.position).toBe(30);
-      expect(vm.audioBuffer).toBeNull();
+      await setup();
+      expect(document.querySelector('.empty-state')).toBeTruthy();
+      const playhead = document.querySelector('.playhead') as HTMLElement;
+      expect(playhead?.style.left).toBe('25%');
     });
   });
 
   describe('togglePlay()', () => {
-    it('calls engine.play() when not playing', () => {
-      stateStub.isPlaying.set(false);
-      component.togglePlay();
+    it('calls engine.play() when not playing', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.togglePlay();
       expect(engineStub.play).toHaveBeenCalled();
     });
 
-    it('calls engine.pause() when playing', () => {
+    it('calls engine.pause() when playing', async () => {
       stateStub.isPlaying.set(true);
-      component.togglePlay();
+      const { fixture } = await setup();
+      fixture.componentInstance.togglePlay();
       expect(engineStub.pause).toHaveBeenCalled();
     });
   });
 
   describe('stop()', () => {
-    it('delegates to engine.stop()', () => {
-      component.stop();
+    it('delegates to engine.stop()', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.stop();
       expect(engineStub.stop).toHaveBeenCalled();
     });
   });
 
   describe('output event handlers', () => {
-    it('onSeek delegates to engine.seek()', () => {
-      component.onSeek(42);
+    it('onSeek delegates to engine.seek()', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.onSeek(42);
       expect(engineStub.seek).toHaveBeenCalledWith(42);
     });
 
-    it('onSpeedChange delegates to engine.setSpeed()', () => {
-      component.onSpeedChange(0.75);
+    it('onSpeedChange delegates to engine.setSpeed()', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.onSpeedChange(0.75);
       expect(engineStub.setSpeed).toHaveBeenCalledWith(0.75);
     });
 
-    it('onLoopToggle flips state.loopEnabled', () => {
-      stateStub.loopEnabled.set(false);
-      component.onLoopToggle();
+    it('onLoopToggle flips state.loopEnabled', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.onLoopToggle();
       expect(stateStub.loopEnabled()).toBe(true);
     });
 
-    it('onLoopStartChange delegates to engine.setLoopStart()', () => {
-      component.onLoopStartChange(15);
+    it('onLoopStartChange delegates to engine.setLoopStart()', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.onLoopStartChange(15);
       expect(engineStub.setLoopStart).toHaveBeenCalledWith(15);
     });
 
-    it('onLoopEndChange delegates to engine.setLoopEnd()', () => {
-      component.onLoopEndChange(75);
+    it('onLoopEndChange delegates to engine.setLoopEnd()', async () => {
+      const { fixture } = await setup();
+      fixture.componentInstance.onLoopEndChange(75);
       expect(engineStub.setLoopEnd).toHaveBeenCalledWith(75);
     });
   });
